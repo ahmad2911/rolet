@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle Game</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            background-image: url('./cosmos.jpg');
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+        .main-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            position: relative;
+            background-color: #ffffff;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .inner-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            position: absolute;
+            animation: circleSwap 1s linear forwards;
+            z-index: 1; /* دایره جدید بالاتر از قبلی */
+        }
+
+        .inner-circle.stopped {
+            animation: none;
+            z-index: 2; /* دایره متوقف‌شده در بالاترین سطح */
+        }
+
+        .buttons, .retry, .bet-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .button, .retry-button, .bet-button {
+            padding: 10px 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .button.red {
+            background-color: red;
+            color: white;
+        }
+
+        .button.black {
+            background-color: black;
+            color: white;
+        }
+
+        .retry-button, .bet-button {
+            background-color: blue;
+            color: white;
+        }
+
+        .button:hover, .retry-button:hover, .bet-button:hover {
+            opacity: 0.8;
+        }
+
+        .score {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .message {
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .bet-container input {
+            width: 100px;
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        @keyframes circleSwap {
+            0% { transform: translate(-100px, 0); opacity: 0; }
+            25% { opacity: 1; transform: translate(0, 0); }
+            75% { opacity: 1; transform: translate(100px, 0); }
+            100% { opacity: 0; transform: translate(200px, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="score">Balance: <span id="balance">5000</span></div>
+    <div class="main-circle"></div>
+    <div class="bet-container" style="display: none;">
+        <input type="number" id="bet-amount" placeholder="Enter bet" min="1">
+        <button class="bet-button" onclick="confirmBet()">Confirm</button>
+    </div>
+    <div class="buttons">
+        <button class="button red" onclick="selectColor('red')">Red</button>
+        <button class="button black" onclick="selectColor('black')">Black</button>
+    </div>
+    <div class="retry" style="display: none;">
+        <button class="retry-button" onclick="retryGame()">Play Again</button>
+    </div>
+    <div class="message" id="message"></div>
+
+    <script>
+        const mainCircle = document.querySelector('.main-circle');
+        const buttons = document.querySelector('.buttons');
+        const retryContainer = document.querySelector('.retry');
+        const betContainer = document.querySelector('.bet-container');
+        const balanceElement = document.getElementById("balance");
+        const messageElement = document.getElementById("message");
+        const betInput = document.getElementById("bet-amount");
+
+        const colors = ["red", "black"];
+        let currentColorIndex = Math.floor(Math.random() * 2);
+        let userChoice = null;
+        let balance = 5000;
+        let betAmount = 0;
+
+        function createMovingCircle(color, isLast = false) {
+            const circle = document.createElement('div');
+            circle.classList.add('inner-circle');
+            circle.style.backgroundColor = color;
+            mainCircle.appendChild(circle);
+
+            if (isLast) {
+                setTimeout(() => {
+                    circle.classList.add('stopped');
+                    checkResult(color);
+                }, 1000);
+            } else {
+                setTimeout(() => {
+                    circle.remove();
+                }, 1000);
+            }
+        }
+
+        function startCircles() {
+            let duration = 10000;
+            let interval = 1000;
+            let iterations = duration / interval;
+
+            for (let i = 0; i < iterations; i++) {
+                setTimeout(() => {
+                    const isLast = i === iterations - 1;
+                    createMovingCircle(colors[currentColorIndex], isLast);
+                    currentColorIndex = (currentColorIndex + 1) % 2;
+                }, i * interval);
+            }
+        }
+
+        function selectColor(color) {
+            userChoice = color;
+            buttons.style.display = 'none';
+            betContainer.style.display = 'flex';
+        }
+
+        function confirmBet() {
+            betAmount = parseInt(betInput.value);
+            if (isNaN(betAmount) || betAmount < 1 || betAmount > balance) {
+                messageElement.textContent = "Invalid bet amount!";
+                return;
+            }
+            betContainer.style.display = 'none';
+            messageElement.textContent = "";
+            startCircles();
+        }
+
+        function checkResult(lastColor) {
+            if (userChoice === lastColor) {
+                messageElement.textContent = "You won!";
+                balance += betAmount;
+            } else {
+                messageElement.textContent = "You lost!";
+                balance -= betAmount;
+            }
+            balanceElement.textContent = balance;
+            retryContainer.style.display = 'flex';
+        }
+
+        function retryGame() {
+            messageElement.textContent = "";
+            retryContainer.style.display = 'none';
+            buttons.style.display = 'flex';
+            userChoice = null;
+            currentColorIndex = Math.floor(Math.random() * 2);
+        }
+    </script>
+</body>
+</html>
